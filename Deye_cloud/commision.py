@@ -29,7 +29,6 @@ class Commision:
 
 
 
-
     """
     Set the value for MAX_CHARGE_CURRENT and MAX_DISCHARGE_CURRENT
     e.g.Field paramterType=MAX_CHARGE_CURRENT, Field value=the value you want to set
@@ -241,6 +240,7 @@ class Commision:
 
 ###TEST 
 if( __name__=="__main__"):
-    serialn="TEST"
+    serialn="2407264006"
     test=Commision(serialn)
-    test.sys_work_mode_update("SELLING_FIRST")
+    #SAMO TEST
+    test.battery_type("LI")

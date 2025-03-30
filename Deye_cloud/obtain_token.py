@@ -19,7 +19,7 @@ class ObtainToken:
         self.password=password
     class Token:
         def __init__(self,access_token,refresh_token,expires_in):
-            self.access_token=access_token
+            self.access_token= access_token
             self.refresh_token=refresh_token
             self.expires_in=expires_in
             self.expiery_date=datetime.now() + timedelta(seconds=int(expires_in))
@@ -46,7 +46,9 @@ class ObtainToken:
             response.raise_for_status()  
             # print response status
             print(response.status_code)
+            print(response)
             data=response.json()
+            print(data)
             access_token=data.get('accessToken')
             refresh_token=data.get('refreshToken')
             expires_in=data.get('expiresIn')
@@ -61,8 +63,8 @@ class ObtainToken:
         return self.appId
 
 ##TESTING
-
-# token=ObtainToken(appId=appId,appSecret=appSecret,email=email,password=password)
-# print(token)
-# token.obtain_token()
-# print(token.expiery_date)
+if(__name__=="__main__"):
+    token=ObtainToken(appId=appId,appSecret=appSecret,email=email,password=password)
+    obtained_token=token.obtain_token()
+    print(obtained_token.expiery_date)
+    print(obtained_token.access_token)

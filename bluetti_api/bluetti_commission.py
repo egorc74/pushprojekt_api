@@ -94,7 +94,7 @@ class BluettiClient:
 
         try:
             response = requests.post(
-                'http://test-open.poweroak.ltd:18888/open/bluiotdata/device/telemetry/v1/telemetryDeviceSetUp',
+                'https://open.bluetti.com/open/bluiotdata/device/telemetry/v1/telemetryDeviceSetUp',
                 json=request_body,
                 headers=headers
             )
@@ -134,7 +134,7 @@ class BluettiClient:
 
         try:
             response = requests.post(
-                'http://test-open.poweroak.ltd:18888/open/bluiotdata/device/telemetry/v1/telemetryDeviceReportedData',
+                'https://open.bluetti.com/open/bluiotdata/device/telemetry/v1/telemetryDeviceReportedData',
                 json=request_body,
                 headers=headers
             )
@@ -150,47 +150,6 @@ class BluettiClient:
                     return error_data
                 except json.JSONDecodeError:
                     print('Response:', e.response.text)
-                    
-
-    # def start_user_session(self):
-    #     print("Available Function Codes:")
-    #     keys = list(self.function_codes.keys())
-        
-    #     # List available function codes with numbers
-    #     for idx, key in enumerate(keys, 1):
-    #         desc = self.function_codes[key]['description']
-    #         min_val = self.function_codes[key]['min']
-    #         max_val = self.function_codes[key]['max']
-    #         print(f"{idx}) {key} ({desc}) - Min: {min_val}, Max: {max_val}")
-
-    #     # Get function code selection
-    #     try:
-    #         selected_num = int(input("\nEnter the number of the function code you want to modify: "))
-    #         if 1 <= selected_num <= len(keys):
-    #             selected_function = keys[selected_num - 1]
-    #         else:
-    #             print("Invalid selection. Exiting.")
-    #             return
-    #     except ValueError:
-    #         print("Invalid input. Please enter a number.")
-    #         return
-
-    #     # Get value input
-    #     code_info = self.function_codes[selected_function]
-    #     min_val = code_info['min']
-    #     max_val = code_info['max']
-
-    #     try:
-    #         value = float(input(f"Enter a value between {min_val} and {max_val}: "))
-    #         if not (min_val <= value <= max_val):
-    #             print(f"Invalid value! Must be between {min_val} and {max_val}.")
-    #             return
-    #     except ValueError:
-    #         print("Invalid value. Please enter a number.")
-    #         return
-
-        # Send the request
-        # self.send_request(selected_function, value)
 
 if __name__ == "__main__":
     # Configuration
@@ -204,5 +163,4 @@ if __name__ == "__main__":
 
     # Initialize and start client
     client = BluettiClient(APP_KEY, APP_SECRET, DEVICE_SN) 
-    client.change_settings("system_control",1)
     client.get_data(1,10)

@@ -1,3 +1,4 @@
-bluetti_api/.env
-inverter_api/.env
+Bluetti_api/.env
+Deye_cloud/.env
 venv/
+Deye_cloud/__pycache__/
