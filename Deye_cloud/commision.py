@@ -3,11 +3,74 @@ import requests
 
 
 class Commision:
-    def __init__(self,serial_number):
+    def __init__(self,serial_number="",station_id=""):
         self.serial_number=serial_number
         self.variable=Variables()
-    
+        self.station_id=station_id
 
+
+
+    """Returns history data for devices at different granularities.
+granularity=1: the field ‘startAt’ should be in format 'yyyy-MM-dd’. Field ‘measurePoints’ has to be passed. Returns measure-point data for the day specified by ‘startAt’
+granularity=2: the field ‘startAt’ and 'endAt’ should be in format 'yyyy-MM-dd’. Returns statistics data between ‘startAt’ and ‘endAt’ (up to 31 days) with intervals of one day
+granularity=3: the field ‘startAt’ and 'endAt’ should be in format 'yyyy-MM’. Returns statistics data between ‘startAt’ and ‘endAt’ (up to 12 months) with intervals of one month
+granularity=4: the field ‘startAt’ and 'endAt’ should be in format 'yyyy’. Returns yearly statistics data between ‘startAt’ and ‘endAt’
+Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/device/measurePoints’"""
+
+
+
+    
+    def device_history(self,startAt,measurePoints="SOC",granularity=1,endAt=0):
+        url = self.variable.baseurl + 'device/history'
+        headers = self.variable.headers
+
+        data = {
+            "deviceSn": self.serial_number,
+            "startAt":startAt,
+            "endAt":endAt,
+            "granularity":granularity,
+            "measurePoints":measurePoints
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())    
+    
+    
+    def station_history(self,startAt,granularity=1,endAt=0):
+        url = self.variable.baseurl + 'station/history'
+        headers = self.variable.headers
+
+        data = {
+            "deviceSn": self.serial_number,
+            "startAt":startAt,
+            "endAt":endAt,
+            "granularity":granularity
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())    
+
+    """timestamps in seconds from now"""
+    def station_history_power(self,startTimestamp=600,endTimestamp=0):
+        url = self.variable.baseurl + 'station/history/power'
+        headers = self.variable.headers
+
+        data = {
+            "stationId": self.station_id,
+            "starTimestamp":startTimestamp,
+            "endTimestamp":endTimestamp,
+        }
+    
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())    
+
+    
     """
     Enable or disable the chargeMode
     """
@@ -62,6 +125,7 @@ class Commision:
     If the inverter type is Three phase HV Hybrid, 3 battery types supported: BATT_V; LI; NO_BATTERY.
     """
 
+ 
 
 
     def battery_type(self,type):
