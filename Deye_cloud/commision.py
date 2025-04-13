@@ -1,6 +1,6 @@
 from variables import Variables   
 import requests 
-
+import json
 
 class Commision:
     def __init__(self,serial_number="",station_id=""):
@@ -8,6 +8,31 @@ class Commision:
         self.variable=Variables()
         self.station_id=station_id
 
+    def device_measure_points(self,device_type="INVERTER"):
+            url = self.variable.baseurl + '/device/measurePoints'
+            headers = self.variable.headers
+
+            data = {
+                "deviceSn": self.serial_number,
+                "deviceType": device_type
+            }
+
+            response = requests.post(url, headers=headers, json=data)
+
+            print(response.status_code)
+            print(response.json())    
+    def tou_config(self):
+        url = self.variable.baseurl + '/config/tou'
+        headers = self.variable.headers
+
+        data = {
+            "deviceSn": self.serial_number,
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())    
 
 
     """Returns history data for devices at different granularities.
@@ -20,8 +45,8 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
 
     
-    def device_history(self,startAt,measurePoints="SOC",granularity=1,endAt=0):
-        url = self.variable.baseurl + 'device/history'
+    def device_history(self,startAt,measurePoints="SOC",granularity=1,endAt=""):
+        url = self.variable.baseurl + '/device/history'
         headers = self.variable.headers
 
         data = {
@@ -38,7 +63,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
         print(response.json())    
     
     
-    def station_history(self,startAt,granularity=1,endAt=0):
+    def station_history(self,startAt,granularity=1,endAt="null"):
         url = self.variable.baseurl + 'station/history'
         headers = self.variable.headers
 
@@ -76,12 +101,12 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
     """
     
     
-    def batteryModeControl(self,action):
+    def battery_mode_control(self,action,mode_type=""):
         url = self.variable.baseurl + '/order/battery/modeControl'
         headers = self.variable.headers
         data = {
                 "deviceSn": self.serial_number,
-                "batteryModeType": "GRID_CHARGE",
+                "batteryModeType": mode_type,
                 "action": action
         }
 
@@ -89,6 +114,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
         print(response.status_code)
         print(response.json())
+        return response.json()
 
 
 
@@ -239,14 +265,15 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
     """
 
     
-    def sys_tou_update(self,json_settings):
+    def sys_tou_update(self,timeUseSettingItems):
         url = self.variable.baseurl + '/order/sys/tou/update'
         headers = self.variable.headers
-
+       
+       
         # request body
         data = {
             "deviceSn": self.serial_number,
-            "timeUseSettingItems": json_settings,
+            "timeUseSettingItems":timeUseSettingItems,
             "timeoutSeconds": 30
         }
 
@@ -255,7 +282,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
         print(response.status_code)
         print(response.json())
-    
+        return response.json()
 
 
     """Turn off TOU: 'action’=off, not necessary to fill in the field ‘days’
@@ -264,22 +291,26 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
         Notice:
         value in field ‘days’ should be in uppercase
     """
-    def sys_tou_switch(self,action,days):
+    def sys_tou_switch(self,action,days=""):
         url = self.variable.baseurl + '/order/sys/tou/switch'
         headers = self.variable.headers
-
+        
         # request body
         data = {
             "action":action,
             "deviceSn": self.serial_number,
-            "days": days
+            
         }
+        if(days):
+            data["days"]=days
+        
 
         # request post
         response = requests.post(url, headers=headers, json=data)
 
         print(response.status_code)
         print(response.json())
+        return response.json()
     
 
     """ set system work mode as SELLING_FIRST,ZERO_EXPORT_TO_LOAD or ZERO_EXPORT_TO_CT 
@@ -298,13 +329,96 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
         print(response.status_code)
         print(response.json())
 
-        
+    def system_config(self):
+        url = self.variable.baseurl + '/config/system'
+        headers = self.variable.headers
+        data = {
+            "deviceSn": self.serial_number,
+        }
 
-        
+        response = requests.post(url, headers=headers, json=data)
 
-###TEST 
-if( __name__=="__main__"):
-    serialn="2407264006"
-    test=Commision(serialn)
-    #SAMO TEST
-    test.battery_type("LI")
+        print(response.status_code)
+        print(response.json())
+    def battery_config(self):
+        url = self.variable.baseurl + '/config/battery'
+        headers = self.variable.headers
+        data = {
+            "deviceSn": self.serial_number,
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())
+    def get_order(self,order_id):
+        url = self.variable.baseurl + f'/order/{order_id}'
+       
+        headers = self.variable.headers
+    
+        response = requests.get(url, headers=headers)
+
+        print(response.status_code)
+        print(response.json())
+
+class Controller:
+    def __init__(self,SN):
+        self.commision=Commision(SN)
+    def charge_battery(self):
+        first_execution=self.commision.battery_mode_control("on","GRID_CHARGE")
+        second_execution=self.commision.sys_tou_switch("off")
+        return [first_execution,second_execution]
+    def discharge_battery(self,power):
+        timeUseSettingItems = [
+        {
+            "enableGeneration": False,
+            "enableGridCharge": False,
+            "power": power,
+            "soc": 35,
+            "time": "(00:00,04:00)",
+        },  
+        {
+            "enableGeneration": False,
+            "enableGridCharge": False,
+            "power": power,
+            "soc": 35,
+            "time": "(04:00,08:00)",
+        }, 
+        {
+            "enableGeneration": False,
+            "enableGridCharge": False,
+            "power": power,
+            "soc": 35,
+            "time": "(08:00,12:00)",
+        },
+         {
+            "enableGeneration": False,
+            "enableGridCharge": False,
+            "power": power,
+            "soc": 35,
+            "time": "(12:00,16:00)",
+        }, 
+        {
+            "enableGeneration": False,
+            "enableGridCharge": False,
+            "power": power,
+            "soc": 35,
+            "time": "(16:00,20:00)",
+        },
+         {
+            "enableGeneration": False,
+            "enableGridCharge": False,
+            "power": power,
+            "soc": 35,
+            "time": "(20:00,00:00)",
+        },
+        ]
+        
+        first_execution=self.commision.battery_mode_control("off")
+        second_execution=self.commision.sys_tou_update(timeUseSettingItems=timeUseSettingItems)
+        third_execution=self.commision.sys_tou_switch("on")
+        return first_execution + second_execution + third_execution
+    def stop_charge_battery(self):
+        first_execution=self.commision.battery_mode_control("off","GRID_CHARGE")
+        second_execution=self.commision.sys_tou_switch("off")
+        return [first_execution,second_execution]
