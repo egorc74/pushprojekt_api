@@ -1,12 +1,16 @@
 from variables import Variables   
 import requests 
 import json
-
+import time
+from datetime import datetime, timedelta
+import logging
 class Commision:
     def __init__(self,serial_number="",station_id=""):
         self.serial_number=serial_number
         self.variable=Variables()
         self.station_id=station_id
+    def update_serial(self,sn):
+        self.serial_number=sn
 
     def device_measure_points(self,device_type="INVERTER"):
             url = self.variable.baseurl + '/device/measurePoints'
@@ -43,24 +47,7 @@ granularity=4: the field ‘startAt’ and 'endAt’ should be in format 'yyyy�
 Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/device/measurePoints’"""
 
 
-
-    
-    def device_history(self,startAt,measurePoints="SOC",granularity=1,endAt=""):
-        url = self.variable.baseurl + '/device/history'
-        headers = self.variable.headers
-
-        data = {
-            "deviceSn": self.serial_number,
-            "startAt":startAt,
-            "endAt":endAt,
-            "granularity":granularity,
-            "measurePoints":measurePoints
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-
-        print(response.status_code)
-        print(response.json())    
+ 
     
     
     def station_history(self,startAt,granularity=1,endAt="null"):
@@ -361,64 +348,253 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
         print(response.status_code)
         print(response.json())
 
-class Controller:
-    def __init__(self,SN):
-        self.commision=Commision(SN)
-    def charge_battery(self):
-        first_execution=self.commision.battery_mode_control("on","GRID_CHARGE")
-        second_execution=self.commision.sys_tou_switch("off")
-        return [first_execution,second_execution]
-    def discharge_battery(self,power):
-        timeUseSettingItems = [
-        {
-            "enableGeneration": False,
-            "enableGridCharge": False,
-            "power": power,
-            "soc": 35,
-            "time": "(00:00,04:00)",
-        },  
-        {
-            "enableGeneration": False,
-            "enableGridCharge": False,
-            "power": power,
-            "soc": 35,
-            "time": "(04:00,08:00)",
-        }, 
-        {
-            "enableGeneration": False,
-            "enableGridCharge": False,
-            "power": power,
-            "soc": 35,
-            "time": "(08:00,12:00)",
-        },
-         {
-            "enableGeneration": False,
-            "enableGridCharge": False,
-            "power": power,
-            "soc": 35,
-            "time": "(12:00,16:00)",
-        }, 
-        {
-            "enableGeneration": False,
-            "enableGridCharge": False,
-            "power": power,
-            "soc": 35,
-            "time": "(16:00,20:00)",
-        },
-         {
-            "enableGeneration": False,
-            "enableGridCharge": False,
-            "power": power,
-            "soc": 35,
-            "time": "(20:00,00:00)",
-        },
-        ]
+
+
+
+## MAIN CHARGING ACTIONS
+
+    def battery_charge(self,power,SOC=100):
+        url = self.variable.baseurl + '/strategy/dynamicControl'
+        headers = self.variable.headers
+
+        targetSOC = SOC;  
+        power = power;  #this is just an example,fill in your target power (Reference valu : power = min(maxAcharge current, gridChargeAmpere) * vol)
+        # request body
+        data = {
+            "deviceSn": self.serial_number,
+            "gridChargeAction": "on",
+            #"gridChargeAmpere": 0,  # BMSCharge current limit;
+            "touAction": "on",
+            "touDays": ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"],
+            # 7days: SUNDAY to SATURDAY
+            "workMode": "ZERO_EXPORT_TO_LOAD",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
+            "timeUseSettingItems": [
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power":power,
+                    "time": "00:00"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "04:00"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "08:00"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "16:00"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "20:00"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "00:10"  # your control time
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())
+        return response.json()
+
+
+    def battery_discharge(self,power,SOC=35):
+        url = self.variable.baseurl + '/strategy/dynamicControl'
+        headers = self.variable.headers
+
+        targetSOC = SOC;  
+        power = power;  #this is just an example,fill in your target power (Reference valu : power = min(maxAcharge current, gridChargeAmpere) * vol)
+        # request body
+        data = {
+            "deviceSn": self.serial_number,
+            "gridChargeAction": "on",
+            #"gridChargeAmpere": 0,  # BMSCharge current limit;
+            "touAction": "on",
+            "touDays": ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"],
+            # 7days: SUNDAY to SATURDAY
+            "workMode": "ZERO_EXPORT_TO_LOAD",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
+            "timeUseSettingItems": [
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power":power,
+                    "time": "00:10"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "02:10"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "04:10"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "15:10"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "20:10"  # your control time
+                },
+                {
+                    "enableGeneration": True,
+                    "enableGridCharge": True,
+                    "soc": targetSOC,  # high value
+                    "power": power,
+                    "time": "23:10"  # your control time
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())
+        return response.json()
+
+
+    def battery_stop(self):
+        url = self.variable.baseurl + '/strategy/dynamicControl'
+        headers = self.variable.headers
+
+         
+        data = {
+            "deviceSn": self.serial_number,
+            "gridChargeAction": "off",
+            "touAction": "off",
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        print(response.status_code)
+        print(response.json())
+        return response.json()
+
+## GET CURRENT DATA
+
+    
+    def current_device_history(self,startAt,measurePoints="SOC",granularity=1,endAt=""):
+        url = self.variable.baseurl + '/device/history'
+        headers = self.variable.headers
+        data = {
+            "deviceSn": self.serial_number,
+            "startAt":startAt,
+            "endAt":endAt,
+            "granularity":granularity,
+            "measurePoints":measurePoints
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())   
+
+
+    def get_raw_current_data(self):
+        current_time = datetime.now()
+        end_timestamp = int(current_time.timestamp() * 1000)
         
-        first_execution=self.commision.battery_mode_control("off")
-        second_execution=self.commision.sys_tou_update(timeUseSettingItems=timeUseSettingItems)
-        third_execution=self.commision.sys_tou_switch("on")
-        return first_execution + second_execution + third_execution
-    def stop_charge_battery(self):
-        first_execution=self.commision.battery_mode_control("off","GRID_CHARGE")
-        second_execution=self.commision.sys_tou_switch("off")
-        return [first_execution,second_execution]
+        one_hour_ago = current_time - timedelta(days=7)
+        start_timestamp = int(one_hour_ago.timestamp() * 1000)
+
+        url = self.variable.baseurl + '/device/historyRaw'
+        headers = self.variable.headers
+        data = {
+            "deviceSn": self.serial_number,
+            "endTimestamp":end_timestamp,
+            "startTimestamp":start_timestamp,
+            "measurePoints":["SOC"]
+        }
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response.status_code)
+        print(response.json())  
+        return response.json()
+    
+    def get_lattest_history(self,device_list=[]):
+        try:
+            url = self.variable.baseurl + '/device/latest'
+            headers = self.variable.headers
+            if(not device_list):
+                list=[self.serial_number]
+               
+            else:
+                list=device_list
+            data = {
+                "deviceList": list
+            }
+            response = requests.post(url, headers=headers, json=data)  
+            return response.json()
+        except Exception as err:
+            logging.error(f"Error occured{err}")
+
+
+    def get_lattest_errors(self):
+        end_timestamp = int(time.time())       
+        start_timestamp = end_timestamp-1*3600
+        try:
+            url = self.variable.baseurl + '/device/alertList'
+            headers = self.variable.headers
+
+            data = {
+                "deviceId": self.serial_number,
+                "endTimestamp": end_timestamp,
+                "startTimestamp": start_timestamp
+            }
+            response = requests.post(url, headers=headers, json=data)  
+            print(response.json())
+            return response.json()
+        except Exception as err:
+            logging.error(f"Error occured{err}")
+
+
+
+
+
+
+
+
+if(__name__=="__main__"):
+    # c=Commision("2407264006")
+    co=Commision("2407264006")
+    # results=co.get_lattest_history()
+    # with open("results.txt", "w") as file:
+    #     json.dump(results, file, indent=4)
+
+    # co.battery_charge(power=8000)
+    co.get_lattest_errors()
