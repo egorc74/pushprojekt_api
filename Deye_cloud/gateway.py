@@ -2,6 +2,7 @@ import os
 import logging
 import time
 import requests
+import json
 from dotenv import load_dotenv
 from commision import Commision
 
@@ -48,7 +49,6 @@ class APIToken:
             # Parse the JSON response
             token_data = response.json()
             self.token.access_token = token_data.get('access_token')
-            print(self.token.access_token)
             self.token.expires_in = token_data.get('expires_in', 3600)  # Default to 1 hour if not provided
 
             if not self.token.access_token:
@@ -82,33 +82,76 @@ class MainController:
         return self.apitoken.get_access_token()
 
 
+##GET LIST OF BATTARIES
+    def get_battery_list(self):
+        url=f"{self.api_url}/batteries"
+        token=self.get_token()
+        headers = {'Authorization': f'Bearer {token}'}
+        try:
+            params = {
+                "is_active": "Y",
+                # Optional parameters:
+                "skip": 0,
+                "limit": 10,
+                "sort_by": "name",
+                "sort_order": "asc"
+            }
+
+            response = requests.get(url, headers=headers,params=params)
+            response.raise_for_status()  # Raise an error for bad status codes
+            data = response.json()  # Decodes JSON automatically
+            battery_list = [item['device_type_id'] for item in data]
+   
+            return battery_list
+
+
+        except requests.exceptions.HTTPError as err:
+            logging.error(f"HTTP error occurred: {err}")
+            logging.error(f"Response content: {response.text}")
+        except ValueError as err:
+            logging.error(f"Value error: {err}")
+        except Exception as err:
+            logging.error(f"An error occurred: {err}")
+        return None 
+
+
+
+
+
 ##READING BATTERY ACTIONS AND CONTROLL THEM
 
 
-    def patch_action(self,id,status):
-        try:
-            url= f"{self.api_url}/battery-actions/{id}"
-            if status:
-                payload = {
-                    "action_executed":True
-                }
-            else:
-                payload = {
-                    "action_executed":False
-                }
+    
+
+    def get_battery_action(self,battery_id): #returns [battery_id,action,power]
+            url= f"{self.api_url}/battery-actions?battery_id={battery_id}&action_executed=false"
+            
             token=self.get_token()
             headers = {'Authorization': f'Bearer {token}'}
-            response=requests.patch(url=url,headers=headers,data=payload)
-            response.raise_for_status()
-            data=response.json()
-            success=data[0]["action_executed"]
-            if success:
-                return success
-            else:
-                raise Exception(f"Patching was not succesfull for request id{id}")
-        except Exception as err:
-            logging.error(f"An error occurred: {err}")
-        return None
+            try:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()  # Raise an error for bad status codes
+                data = response.json()
+                print(f"received battery actions{data}")
+                
+                id=data[0]["id"]
+                battery_id=data[0]["battery_id"]
+                action=data[0]["action"]
+                power=data[0]["target_power"]
+                if (id==None):
+                    logging.error(f"Error in retrieving id of order{data}")
+                return [id,battery_id,action,power]
+
+
+            except requests.exceptions.HTTPError as err:
+                logging.error(f"HTTP error occurred: {err}")
+                logging.error(f"Response content: {response.text}")
+            except ValueError as err:
+                logging.error(f"Value error: {err}")
+            except Exception as err:
+                logging.error(f"An error occurred: {err}")
+            return None 
+
 
     def controll_battery(self,action,power,battery_id=2):
         try:
@@ -138,28 +181,70 @@ class MainController:
         except Exception as e: 
             print(f"An unexpected error occurred: {e}")     
 
-            
-            
-
-    def get_battery_action(self,battery_id): #returns [battery_id,action,power]
-        url= f"{self.api_url}/battery-actions?battery_id={battery_id}&action_executed=false"
-        
-        token=self.get_token()
-        headers = {'Authorization': f'Bearer {token}'}
+    def patch_action(self,id,status):
         try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()  # Raise an error for bad status codes
-            data = response.json()
+            url= f"{self.api_url}/battery-actions/{id}"
+            if status:
+                payload = {
+                    "action_executed":True
+                }
+            else:
+                payload = {
+                    "action_executed":False
+                }
+            token=self.get_token()
+            headers = {'Authorization': f'Bearer {token}'}
+            response=requests.patch(url=url,headers=headers,data=json.dumps(payload))
+            response.raise_for_status()
+            data=response.json()
+            success=data[0]["action_executed"]
+            print(f"results from patching battery actions results{data}")
+            if success:
+                return success
+            else:
+                raise Exception(f"Patching was not succesfull for request id{id}")
+        except requests.exceptions.HTTPError as errh:
+            print(f"HTTP Error: {errh}")
+            if response.text:
+                print("Error details:", response.json())
+        except requests.exceptions.RequestException as err:
+            print(f"Request Error: {err}")
+        except ValueError as json_err:
+            print(f"JSON Decode Error: {json_err}")
+
             
-            id=data[0]["id"]
-            battery_id=data[0]["battery_id"]
-            action=data[0]["action"]
-            power=data[0]["target_power"]
-            if (id==None):
-                logging.error(f"Error in retrieving id of order{data}")
-            return [id,battery_id,action,power]
+
+    
 
 
+    def action_controller(self): #main function
+        try:
+            actions=self.get_battery_action(2)
+            if actions:
+                success=self.controll_battery(battery_id=actions[1],action=actions[2],power=4000)
+                result=self.patch_action(id=actions[0],status=success)
+            if not result: 
+                raise Exception(f"Action controller was unsuccessful. Actions retrieved from EMS:{actions}")
+            logging.info(f"Action was succesfuly executed and patched. actions:{actions},execution success:{success},patching result{result}")
+        except requests.exceptions.HTTPError as err:
+            logging.error(f"HTTP error occurred: {err}")
+            logging.error(f"Response content: {result.text}")
+        except ValueError as err:
+            logging.error(f"Value error: {err}")
+        except Exception as err:
+            logging.error(f"An error occurred: {err}")
+        return None 
+                
+
+
+
+##RETRIEVING CURRENT PRODUCTION RECORDS AND SAVING THEM IN SYSTEM
+    def get_power_records(self,battery_id):     #TODo update parameters
+        serial_number="2407264006"
+        self.commission.update_serial(sn=serial_number)
+        try:
+            response=self.commission.get_lattest_history()
+            return response
         except requests.exceptions.HTTPError as err:
             logging.error(f"HTTP error occurred: {err}")
             logging.error(f"Response content: {response.text}")
@@ -168,63 +253,18 @@ class MainController:
         except Exception as err:
             logging.error(f"An error occurred: {err}")
         return None 
-
-
-
-    def action_controller(self): #main function
-        try:
-            actions=self.get_battery_action(self,2)
-            success=self.controll_battery(batery_id=actions[1],action=actions[2],power=actions[3])
-            result=self.patch_action(self,id=actions[0],status=success)
-            if not result: 
-                raise Exception(f"Action controller was unsuccessful. Actions retrieved from EMS:{actions}")
-            logging.info(f"Action was succesfuly executed and patched. actions:{actions},execution success:{success},patching result{result}")
-        except Exception as err:
-            logging.error(f"Unknown error occured{err}")
-
-
-
-##RETRIEVING CURRENT PRODUCTION RECORDS AND SAVING THEM IN SYSTEM
-    def get_power_records(self,battery_id):     #TODo update parameters
-        serial_number="2407264006"
-        self.commission.update_serial(sn=serial_number)
-        history=self.commission.get_lattest_history()
-        return history
-        # try:
-        #     for  item in history["deviceDataList"][0]["dataList"]:
-        #         if item["key"] =="SOC": soc_value=item["value"] 
-        #         if item["key"] =="BatteryVoltage": voltage_value=item["value"] 
-        #         if item["key"] =="BatteryPower": power_value=item["value"] 
-        #         if item["key"] =="BatteryCurrent": current_value=item["value"] 
-        #         if item["key"] =="SOC": soc_value=item["value"] 
-        #     params={
-        #         "soc":int(soc_value),
-        #         "power":int(power_value),
-        #         "voltage":int(voltage_value),
-        #         "current":int(current_value),
-        #     }
-
-        # except StopIteration as err:
-        #     print(f"{err} not found in data!")
-        # except (KeyError, IndexError) as err:
-        #     print(f"{err}Invalid data structure!")
-        # except ValueError as err:
-        #     print(f"{err} is not a valid number!")
-    
+                
 
     def fetch_power_records(self,battery_id,records):
-        url= f"{self.api_url}/battery-records"
+        url= f"{self.api_url}/battery-records/raw"
         token=self.get_token()
         headers = {'Authorization': f'Bearer {token}'}
-        params={'battery_id':battery_id,
-                'location_id':0,
-                'data':records,
-        }
+        records['battery_id']=battery_id
         try:
-            response = requests.post(url,data=params, headers=headers)
+            response = requests.post(url,data=json.dumps(records), headers=headers)
             response.raise_for_status()  # Raise an error for bad status codes
             logging.info(f"Records were succesfully fetched{response.json()}")
-
+            return response.json()
         except requests.exceptions.HTTPError as err:
             logging.error(f"HTTP error occurred: {err}")
             logging.error(f"Response content: {response.text}")
@@ -236,8 +276,12 @@ class MainController:
     
     def history_controller(self,battery_id):
             records=self.get_power_records(battery_id)
-            self.fetch_power_records(battery_id,records=records)   
-            
+            response=self.fetch_power_records(battery_id,records=records)   
+
+
+if __name__=="__main__":
+    c=MainController(api_url=api_url,username=username,password=password)
+    c.get_battery_list()
 
         
         

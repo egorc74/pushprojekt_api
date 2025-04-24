@@ -370,46 +370,46 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
             "workMode": "ZERO_EXPORT_TO_LOAD",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
             "timeUseSettingItems": [
                 {
-                    "enableGeneration": True,
+                    "enableGeneration": False,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power":power,
                     "time": "00:00"  # your control time
                 },
                 {
-                    "enableGeneration": True,
+                    "enableGeneration": False,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
                     "time": "04:00"  # your control time
                 },
                 {
-                    "enableGeneration": True,
+                    "enableGeneration": False,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
                     "time": "08:00"  # your control time
                 },
                 {
-                    "enableGeneration": True,
+                    "enableGeneration": False,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
                     "time": "16:00"  # your control time
                 },
                 {
-                    "enableGeneration": True,
+                    "enableGeneration": False,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
                     "time": "20:00"  # your control time
                 },
                 {
-                    "enableGeneration": True,
+                    "enableGeneration": False,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "00:10"  # your control time
+                    "time": "00:00"  # your control time
                 }
             ]
         }
@@ -590,11 +590,6 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
 
 if(__name__=="__main__"):
-    # c=Commision("2407264006")
     co=Commision("2407264006")
-    # results=co.get_lattest_history()
-    # with open("results.txt", "w") as file:
-    #     json.dump(results, file, indent=4)
-
-    # co.battery_charge(power=8000)
-    co.get_lattest_errors()
+    print(co.get_lattest_history())
+ 
