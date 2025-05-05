@@ -155,7 +155,7 @@ class MainController:
 
     def controll_battery(self,action,power,battery_id=2):
         try:
-            serial_number="2407264006"
+            serial_number=battery_id
             self.commission.update_serial(sn=serial_number)
             if(action==-1):
                 response=self.commission.battery_discharge(power=power)
@@ -217,9 +217,9 @@ class MainController:
     
 
 
-    def action_controller(self): #main function
+    def action_controller(self,bat): #main function
         try:
-            actions=self.get_battery_action(2)
+            actions=self.get_battery_action(battery_id=bat)
             if actions:
                 success=self.controll_battery(battery_id=actions[1],action=actions[2],power=4000)
                 result=self.patch_action(id=actions[0],status=success)
@@ -240,7 +240,7 @@ class MainController:
 
 ##RETRIEVING CURRENT PRODUCTION RECORDS AND SAVING THEM IN SYSTEM
     def get_power_records(self,battery_id):     #TODo update parameters
-        serial_number="2407264006"
+        serial_number=battery_id
         self.commission.update_serial(sn=serial_number)
         try:
             response=self.commission.get_lattest_history()
