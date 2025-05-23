@@ -155,8 +155,8 @@ class MainController:
 
     def controll_battery(self,action,power,battery_id=2):
         try:
-            serial_number=battery_id
-            self.commission.update_serial(sn=serial_number)
+            serial_number="2407264006"   #testiranje MegaM deye batarije, na to popraviti na splosno resitev.
+            self.commission.update_serial(sn=serial_number) 
             if(action==-1):
                 response=self.commission.battery_discharge(power=power)
                 success=response.get('success')
@@ -222,6 +222,7 @@ class MainController:
 
 
     def action_controller(self,bat): #main function
+
         try:
             actions=self.get_battery_action(battery_id=bat)
             if actions:
@@ -244,7 +245,7 @@ class MainController:
 
 ##RETRIEVING CURRENT PRODUCTION RECORDS AND SAVING THEM IN SYSTEM
     def get_power_records(self,battery_id):     #TODo update parameters
-        serial_number=battery_id
+        serial_number="2407264006"
         self.commission.update_serial(sn=serial_number)
         try:
             response=self.commission.get_lattest_history()
@@ -295,7 +296,7 @@ class MainController:
             "current": 0,
             "temperature":0,
             "state": 0,
-            
+
             "error_code":"400 battery is disconnected"
         }
 
