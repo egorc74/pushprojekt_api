@@ -4,7 +4,7 @@ import time
 import threading
 import os
 import logging
-logging.basicConfig(filename='inverter.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
+logging.basicConfig(filename='logging/inverter.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 load_dotenv()
 
