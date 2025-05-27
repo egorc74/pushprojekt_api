@@ -89,7 +89,6 @@ class MainController:
         headers = {'Authorization': f'Bearer {token}'}
         try:
             params = {
-                "is_active": "Y",
                 # Optional parameters:
                 "skip": 0,
                 "limit": 10,
@@ -100,7 +99,7 @@ class MainController:
             response = requests.get(url, headers=headers,params=params)
             response.raise_for_status()  # Raise an error for bad status codes
             data = response.json()  # Decodes JSON automatically
-            battery_list = [item['device_type_id'] for item in data]
+            battery_list = [item['id'] for item in data]
    
             return battery_list
 
@@ -120,9 +119,6 @@ class MainController:
 
 ##READING BATTERY ACTIONS AND CONTROLL THEM
 
-
-    
-
     def get_battery_action(self,battery_id): #returns [battery_id,action,power]
             url= f"{self.api_url}/battery-actions?battery_id={battery_id}&action_executed=false"
             
@@ -132,24 +128,27 @@ class MainController:
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()  # Raise an error for bad status codes
                 data = response.json()
-                print(f"received battery actions{data}")
-                
-                id=data[0]["id"]
-                battery_id=data[0]["battery_id"]
-                action=data[0]["action"]
-                power=data[0]["target_power"]
-                if (id==None):
-                    logging.error(f"Error in retrieving id of order{data}")
-                return [id,battery_id,action,power]
+                if data:
+                    logging.info(f"get_battery_actions:Succesffuly received battery actions:{data}")
+                    id=data[0]["id"]
+                    if (id==None):
+                        logging.error(f"Error in retrieving id of order{data}")
+                    battery_id=data[0]["battery_id"]
+                    action=data[0]["action"]
+                    power=data[0]["target_power"]
+                    return [id,battery_id,action,power]
+
+                else: 
+                    return 0
 
 
             except requests.exceptions.HTTPError as err:
-                logging.error(f"HTTP error occurred: {err}")
-                logging.error(f"Response content: {response.text}")
+                logging.error(f"get_battery_actions:HTTP error occurred: {err}")
+                logging.error(f"get_battery_actions:Response content: {response.text}")
             except ValueError as err:
-                logging.error(f"Value error: {err}")
+                logging.error(f"get_battery_actions:Value error: {err}")
             except Exception as err:
-                logging.error(f"An error occurred: {err}")
+                logging.error(f"get_battery_actions:An error occurred: {err}")
             return None 
 
 
@@ -160,26 +159,31 @@ class MainController:
             if(action==-1):
                 response=self.commission.battery_discharge(power=power)
                 success=response.get('success')
+                logging.info(f"controll_battery:response from sending actions{response}")
                 if(success==True):
                     return success
                 else:
-                    raise Exception(f"Unsuccessful command{success}")
+                    raise Exception(f"controll_battery:Unsuccessful command{success}")
             if(action==0):
                 response=self.commission.battery_stop()
                 success=response.get('success')
+                logging.info(f"controll_battery:response from sending actions{response}")
+
                 if(success==True):
                     return success
                 else:
-                    raise Exception(f"Unsuccessful command{success}")
-            if(action==-1):
+                    raise Exception(f"controll_battery:Unsuccessful command{success}")
+            if(action==1):
                 response=self.commission.battery_charge(power=power)
                 success=response.get('success')
+                logging.info(f"controll_battery:controll_battery:responce from sending actions{response}")
+
                 if(success==True):
                     return success
                 else:
-                    raise Exception(f"Unsuccessful command{success}")
+                    raise Exception(f"controll_battery:Unsuccessful command{success}")
         except Exception as e: 
-            print(f"An unexpected error occurred: {e}")     
+            print(f"controll_battery:An unexpected error occurred: {e}")     
 
     def patch_action(self,id,status):
         try:
@@ -190,8 +194,7 @@ class MainController:
                 }
             else:
                 ##IF BATTERY DOESNT RESPOND POST 0 POWER AND ERROR
-                self.post_battery_disconnection(battery_id=id)
-
+                # self.post_battery_disconnection(battery_id=id)
                 payload = {
                     "action_executed":False
                 }
@@ -200,20 +203,20 @@ class MainController:
             response=requests.patch(url=url,headers=headers,data=json.dumps(payload))
             response.raise_for_status()
             data=response.json()
+            logging.info(f"patch_actions:response from patching actions{data}")
             success=data[0]["action_executed"]
-            print(f"results from patching battery actions results{data}")
             if success:
                 return success
             else:
-                raise Exception(f"Patching was not succesfull for request id{id}")
+                raise Exception(f"patch_action:Patching was not succesfull for request id{id}")
         except requests.exceptions.HTTPError as errh:
-            print(f"HTTP Error: {errh}")
+            print(f"patch_action:HTTP Error: {errh}")
             if response.text:
-                print("Error details:", response.json())
+                print("patch_action:Error details:", response.json())
         except requests.exceptions.RequestException as err:
-            print(f"Request Error: {err}")
+            print(f"patch_action:Request Error: {err}")
         except ValueError as json_err:
-            print(f"JSON Decode Error: {json_err}")
+            print(f"patch_action:JSON Decode Error: {json_err}")
 
             
 
@@ -227,15 +230,15 @@ class MainController:
                 success=self.controll_battery(battery_id=actions[1],action=actions[2],power=4000)
                 result=self.patch_action(id=actions[0],status=success)
             if not result: 
-                raise Exception(f"Action controller was unsuccessful. Actions retrieved from EMS:{actions}")
-            logging.info(f"Action was succesfuly executed and patched. actions:{actions},execution success:{success},patching result{result}")
+                raise Exception(f"action_controller:Action controller was unsuccessful. Actions retrieved from EMS:{actions}")
+            logging.info(f"action_controller:Action was succesfuly executed and patched. actions:{actions},execution success:{success},patching result{result}")
         except requests.exceptions.HTTPError as err:
-            logging.error(f"HTTP error occurred: {err}")
-            logging.error(f"Response content: {result.text}")
+            logging.error(f"action_controller:HTTP error occurred: {err}")
+            logging.error(f"action_controller:Response content: {result.text}")
         except ValueError as err:
-            logging.error(f"Value error: {err}")
+            logging.error(f"action_controller:Value error: {err}")
         except Exception as err:
-            logging.error(f"An error occurred: {err}")
+            logging.error(f"action_controller:An error occurred: {err}")
         return None 
                 
 
@@ -243,18 +246,20 @@ class MainController:
 
 ##RETRIEVING CURRENT PRODUCTION RECORDS AND SAVING THEM IN SYSTEM
     def get_power_records(self,battery_id):     #TODo update parameters
-        serial_number=battery_id
+        serial_number="2407264006"
         self.commission.update_serial(sn=serial_number)
         try:
             response=self.commission.get_lattest_history()
+            logging.info(f"get_power_records:Records were succesfully received{response}")
             return response
+
         except requests.exceptions.HTTPError as err:
-            logging.error(f"HTTP error occurred: {err}")
-            logging.error(f"Response content: {response.text}")
+            logging.error(f"get_power_records:HTTP error occurred: {err}")
+            logging.error(f"get_power_records:Response content: {response.text}")
         except ValueError as err:
-            logging.error(f"Value error: {err}")
+            logging.error(f"get_power_records:Value error: {err}")
         except Exception as err:
-            logging.error(f"An error occurred: {err}")
+            logging.error(f"get_power_records:An error occurred: {err}")
         return None 
                 
 
@@ -266,15 +271,15 @@ class MainController:
         try:
             response = requests.post(url,data=json.dumps(records), headers=headers)
             response.raise_for_status()  # Raise an error for bad status codes
-            logging.info(f"Records were succesfully fetched{response.json()}")
+            logging.info(f"fetch_power_records:Records were succesfully fetched{response.json()}")
             return response.json()
         except requests.exceptions.HTTPError as err:
-            logging.error(f"HTTP error occurred: {err}")
-            logging.error(f"Response content: {response.text}")
+            logging.error(f"fetch_power_records:HTTP error occurred: {err}")
+            logging.error(f"fetch_power_records:Response content: {response.text}")
         except ValueError as err:
-            logging.error(f"Value error: {err}")
+            logging.error(f"fetch_power_records:Value error: {err}")
         except Exception as err:
-            logging.error(f"An error occurred: {err}")
+            logging.error(f"fetch_power_records:An error occurred: {err}")
         return None 
     
     def post_battery_disconnection(self,battery_id,battery_location_id=""):
@@ -318,7 +323,9 @@ class MainController:
 
 if __name__=="__main__":
     c=MainController(api_url=api_url,username=username,password=password)
-    c.get_battery_list()
+    print(c.get_power_records(1))
+
+    
 
         
         

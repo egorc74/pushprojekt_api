@@ -367,7 +367,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
             "touAction": "on",
             "touDays": ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"],
             # 7days: SUNDAY to SATURDAY
-            "workMode": "ZERO_EXPORT_TO_LOAD",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
+            "workMode": "SELLING_FIRST",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
             "timeUseSettingItems": [
                 {
                     "enableGeneration": False,
@@ -435,7 +435,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
             "touAction": "on",
             "touDays": ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"],
             # 7days: SUNDAY to SATURDAY
-            "workMode": "ZERO_EXPORT_TO_LOAD",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
+            "workMode": "SELLING_FIRST",  #  ZERO_EXPORT_TO_CT(if CT exists) or ZERO_EXPORT_TO_LOAD
             "timeUseSettingItems": [
                 {
                     "enableGeneration": True,
@@ -484,8 +484,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
         response = requests.post(url, headers=headers, json=data)
 
-        print(response.status_code)
-        print(response.json())
+        
         return response.json()
 
 
@@ -584,12 +583,6 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
 
 
-
-
-
-
-
 if(__name__=="__main__"):
     co=Commision("2407264006")
     print(co.get_lattest_history())
- 

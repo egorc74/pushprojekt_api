@@ -3,6 +3,8 @@ from gateway import MainController
 import time
 import threading
 import os
+import logging
+logging.basicConfig(filename='inverter.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 load_dotenv()
 
@@ -16,26 +18,34 @@ c = MainController(api_url=api_url, username=username, password=password)
 running = True
 
 def action(battery_list):
+    last_time=0
     while running:
-        for battery in battery_list:
-            c.action_controller(battery)
-        time.sleep(15)
+        current_time=time.time()
+        if (current_time-last_time>=60): 
+            last_time=current_time      
+            for battery in battery_list:
+                c.action_controller(battery)
 
+            
 def history(battery_list):
+    last_time=0
     while running:
-        for battery in battery_list:
-            c.history_controller(battery_id=battery)
-        time.sleep(10)
+        current_time=time.time()
+        if (current_time-last_time>=60): 
+            last_time=current_time      
+            for battery in battery_list:
+                c.history_controller(battery_id=battery)
 
 def get_battery_list():
     list=c.get_battery_list()
+    return list
 
 
 if __name__ == "__main__":
     battery_list=get_battery_list()
-    battery_control_thread = threading.Thread(target=action,args=battery_list)
-    history_fetching_thread = threading.Thread(target=history,args=battery_list)
-    
+    logging.info(f"get_battery_list:{battery_list}")
+    battery_control_thread = threading.Thread(target=action,args=(battery_list,))
+    history_fetching_thread = threading.Thread(target=history,args=(battery_list,))
     battery_control_thread.start()
     history_fetching_thread.start()
 
