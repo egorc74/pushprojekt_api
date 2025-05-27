@@ -5,7 +5,7 @@ import requests
 import json
 from dotenv import load_dotenv
 from commision import Commision
-
+from datetime import datetime
 load_dotenv()
 api_url= os.getenv('API_URL') 
 username=os.getenv('API_USER')
@@ -189,6 +189,9 @@ class MainController:
                     "action_executed":True
                 }
             else:
+                ##IF BATTERY DOESNT RESPOND POST 0 POWER AND ERROR
+                self.post_battery_disconnection(battery_id=id)
+
                 payload = {
                     "action_executed":False
                 }
@@ -262,6 +265,40 @@ class MainController:
         records['battery_id']=battery_id
         try:
             response = requests.post(url,data=json.dumps(records), headers=headers)
+            response.raise_for_status()  # Raise an error for bad status codes
+            logging.info(f"Records were succesfully fetched{response.json()}")
+            return response.json()
+        except requests.exceptions.HTTPError as err:
+            logging.error(f"HTTP error occurred: {err}")
+            logging.error(f"Response content: {response.text}")
+        except ValueError as err:
+            logging.error(f"Value error: {err}")
+        except Exception as err:
+            logging.error(f"An error occurred: {err}")
+        return None 
+    
+    def post_battery_disconnection(self,battery_id,battery_location_id=""):
+        url= f"{self.api_url}/battery-records/"
+        token=self.get_token()
+        headers = {'Authorization': f'Bearer {token}'}
+
+
+        payload = {
+            "battery_id": battery_id,
+            "location_id": battery_location_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "soc": 0,
+            "soh": 0,
+            "power": 0,
+            "voltage": 0,
+            "current": 0,
+            "temperature":0,
+            "state": 0,
+            "error_code":"400 battery is disconnected"
+        }
+
+        try:
+            response = requests.post(url,data=json.dumps(payload), headers=headers)
             response.raise_for_status()  # Raise an error for bad status codes
             logging.info(f"Records were succesfully fetched{response.json()}")
             return response.json()
