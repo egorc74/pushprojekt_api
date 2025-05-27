@@ -2,3 +2,4 @@ Bluetti_api/.env
 Deye_cloud/.env
 venv/
 Deye_cloud/__pycache__/
+Deye_cloud/logging/
