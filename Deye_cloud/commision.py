@@ -5,9 +5,9 @@ import time
 from datetime import datetime, timedelta
 import logging
 class Commision:
-    def __init__(self,serial_number="",station_id=""):
+    def __init__(self,serial_number="",station_id="",battery_id=2):
         self.serial_number=serial_number
-        self.variable=Variables()
+        self.variable=Variables(battery_id=battery_id)
         self.station_id=station_id
     def update_serial(self,sn):
         self.serial_number=sn
@@ -415,9 +415,6 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
         }
 
         response = requests.post(url, headers=headers, json=data)
-
-        print(response.status_code)
-        print(response.json())
         return response.json()
 
 
@@ -483,8 +480,6 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
         }
 
         response = requests.post(url, headers=headers, json=data)
-
-        
         return response.json()
 
 
@@ -498,10 +493,7 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
             "gridChargeAction": "off",
             "touAction": "off",
         }
-
         response = requests.post(url, headers=headers, json=data)
-        print(response.status_code)
-        print(response.json())
         return response.json()
 
 ## GET CURRENT DATA
@@ -585,4 +577,4 @@ Value for field of ‘measurePoints‘ could be got through endpint ‘/v1.0/dev
 
 if(__name__=="__main__"):
     co=Commision("2407264006")
-    print(co.get_lattest_history())
+    print(co.battery_stop())

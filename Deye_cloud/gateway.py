@@ -24,7 +24,7 @@ class APIToken:
         self.token=self.Token()
     
     def get_access_token(self):
-        if self.token and self.token.token_expiry > time.time():
+        if self.token.access_token and self.token.token_expiry > time.time():
             logging.info(f"Reusing existing access token. Token expires in {self.token.token_expiry - time.time():.2f} seconds.")
             return self.token.access_token     
 
@@ -53,10 +53,10 @@ class APIToken:
 
             if not self.token.access_token:
                 raise ValueError("Access token not found in response.")
-            logging.info(f"New access token retrieved, valid for {self.token.expires_in} seconds.")
-
+           
             # Set token expiration to expire a bit earlier to handle clock skew
-            self.token_expiry = time.time() + self.token.expires_in - 10  # Subtracting 10 seconds
+            self.token.token_expiry = time.time() + self.token.expires_in - 10  # Subtracting 10 seconds
+            logging.info(f"New access token retrieved, valid for {self.token.expires_in},current time{time.time()}, seconds until {self.token.token_expiry}.")
 
             return self.token.access_token
 
@@ -72,15 +72,17 @@ class APIToken:
 
 
 class MainController:
-    def __init__(self,api_url,username,password):
+    def __init__(self,api_url,username,password,battery_id):
         self.apitoken=APIToken(url=api_url,username=username,password=password)
         self.api_url=api_url
         self.username=username
         self.password=password
-        self.commission=Commision()
+        self.commission=Commision(battery_id=battery_id)
     def get_token(self):
         return self.apitoken.get_access_token()
 
+    def change_battery_id(self,battery_id):
+        self.commission=Commision(battery_id=battery_id)
 
 ##GET LIST OF BATTARIES
     def get_battery_list(self):
@@ -139,6 +141,8 @@ class MainController:
                     return [id,battery_id,action,power]
 
                 else: 
+                    logging.error(f"get_battery_actions:Error in receiving actions{data}")
+
                     return 0
 
 
@@ -154,36 +158,40 @@ class MainController:
 
     def controll_battery(self,action,power,battery_id=2):
         try:
-            serial_number=battery_id
+            serial_number="2407264006"
             self.commission.update_serial(sn=serial_number)
             if(action==-1):
                 response=self.commission.battery_discharge(power=power)
                 success=response.get('success')
-                logging.info(f"controll_battery:response from sending actions{response}")
                 if(success==True):
+                    logging.info(f"controll_battery:response from sending actions{response}")
                     return success
                 else:
+                    logging.error(f"controll_battery:response from sending actions{response}")
                     raise Exception(f"controll_battery:Unsuccessful command{success}")
+
             if(action==0):
                 response=self.commission.battery_stop()
                 success=response.get('success')
-                logging.info(f"controll_battery:response from sending actions{response}")
 
                 if(success==True):
+                    logging.info(f"controll_battery:response from sending actions{response}")
                     return success
                 else:
+                    logging.error(f"controll_battery:response from sending actions{response}")
                     raise Exception(f"controll_battery:Unsuccessful command{success}")
             if(action==1):
                 response=self.commission.battery_charge(power=power)
                 success=response.get('success')
-                logging.info(f"controll_battery:controll_battery:responce from sending actions{response}")
 
                 if(success==True):
+                    logging.info(f"controll_battery:response from sending actions{response}")
                     return success
                 else:
+                    logging.error(f"controll_battery:response from sending actions{response}")
                     raise Exception(f"controll_battery:Unsuccessful command{success}")
         except Exception as e: 
-            print(f"controll_battery:An unexpected error occurred: {e}")     
+            logging.info(f"controll_battery:An unexpected error occurred: {e}")     
 
     def patch_action(self,id,status):
         try:
@@ -209,6 +217,7 @@ class MainController:
                 return success
             else:
                 raise Exception(f"patch_action:Patching was not succesfull for request id{id}")
+
         except requests.exceptions.HTTPError as errh:
             print(f"patch_action:HTTP Error: {errh}")
             if response.text:
@@ -225,6 +234,7 @@ class MainController:
 
     def action_controller(self,bat): #main function
         try:
+            result=0
             actions=self.get_battery_action(battery_id=bat)
             if actions:
                 success=self.controll_battery(battery_id=actions[1],action=actions[2],power=4000)

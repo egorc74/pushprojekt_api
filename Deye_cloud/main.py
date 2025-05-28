@@ -4,7 +4,7 @@ import time
 import threading
 import os
 import logging
-logging.basicConfig(filename='logging/inverter.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
+logging.basicConfig(filename='inverter.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s', filemode='w' )
 
 load_dotenv()
 
@@ -12,7 +12,8 @@ api_url = os.getenv('API_URL')
 username = os.getenv('API_USER')
 password = os.getenv('API_PASS')
 
-c = MainController(api_url=api_url, username=username, password=password)
+battery_id=2 ##testing
+c = MainController(api_url=api_url, username=username, password=password,battery_id=battery_id)
 
 # Global flag to control thread execution
 running = True
@@ -28,6 +29,7 @@ def action(battery_list):
 
             
 def history(battery_list):
+    time.sleep(1)
     last_time=0
     while running:
         current_time=time.time()
