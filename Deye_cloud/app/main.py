@@ -17,30 +17,42 @@ c = MainController(api_url=api_url, username=username, password=password)
 # Global flag to control thread execution
 running = True
 
-def action(battery_list):
+def action():
     last_time=0
     while running:
         current_time=time.time()
         if (current_time-last_time>=60):
             last_time=current_time
+            battery_list=[]
             battery_list = get_battery_list()  # Get fresh battery list every minute
-            logging.info(f"get_battery_list:{battery_list}")
-            for battery in battery_list:
-                c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
-                c.action_controller(battery['id'])
+            if (len(battery_list)>0):
+                logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
+                for battery in battery_list:
+                    c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
+                    c.action_controller(battery['id'])
+            else:
+                logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
 
 
-def history(battery_list):
-    time.sleep(1)
+
+def history():
+    time.sleep(1) #delay betwee threads 
     last_time=0
     while running:
         current_time=time.time()
         if (current_time-last_time>=60):
             last_time=current_time
+            battery_list=[]
             battery_list = get_battery_list()  # Get fresh battery list every minute
-            for battery in battery_list:
-                c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
-                c.history_controller(battery_id=battery['id'])
+            if (len(battery_list)>0):
+                logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
+                for battery in battery_list:
+                    c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
+                    c.history_controller(battery_id=battery['id'])
+            else:
+                logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
+
+            
 
 def get_battery_list():
     list=c.get_battery_list()
@@ -48,10 +60,8 @@ def get_battery_list():
 
 
 if __name__ == "__main__":
-    battery_list=get_battery_list()
-    logging.info(f"get_battery_list:{battery_list}")
-    battery_control_thread = threading.Thread(target=action,args=(battery_list,))
-    history_fetching_thread = threading.Thread(target=history,args=(battery_list,))
+    battery_control_thread = threading.Thread(target=action)
+    history_fetching_thread = threading.Thread(target=history)
     battery_control_thread.start()
     history_fetching_thread.start()
 
