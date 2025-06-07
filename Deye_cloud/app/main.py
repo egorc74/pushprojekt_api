@@ -29,11 +29,11 @@ def action():
                 battery_list = get_battery_list()  # Get fresh battery list every minute
                 if (battery_list):  # If battery list is successfully received, save it as a file
                     logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
-                    with open("latest_battery_list.json", "w") as f:
-                        json.dump(battery_list.json(), f, indent=4)
+                    with open("battery_lists/latest_battery_list.json", "w") as f:
+                        json.dump(battery_list, f, indent=4)
                         
                 else:   #If battery list is empty, read from last saved one
-                    with open("latest_battery_list.json", "r") as f:
+                    with open("battery_lists/latest_battery_list.json", "r") as f:
                         battery_list = json.load(f)
                     logging.info(f"get_battery_list:Battery list is empty, openning the latest battery list{battery_list}:")
 
@@ -56,11 +56,11 @@ def history():
                 battery_list = get_battery_list()  # Get fresh battery list every minute
                 if (battery_list):  # If battery list is successfully received, save it as a file
                     logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
-                    with open("latest_battery_list.json", "w") as f:
-                        json.dump(battery_list.json(), f, indent=4)
+                    with open("battery_lists/latest_battery_list.json", "w") as f:
+                        json.dump(battery_list, f, indent=4)
                         
                 else:   #If battery list is empty, read from last saved one
-                    with open("latest_battery_list.json", "r") as f:
+                    with open("battery_lists/latest_battery_list.json", "r") as f:
                         battery_list = json.load(f)
                     logging.info(f"get_battery_list:Battery list is empty, openning the latest battery list{battery_list}:")
                 for battery in battery_list:
