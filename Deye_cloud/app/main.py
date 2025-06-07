@@ -23,15 +23,18 @@ def action():
         current_time=time.time()
         if (current_time-last_time>=60):
             last_time=current_time
-            battery_list=[]
-            battery_list = get_battery_list()  # Get fresh battery list every minute
-            if (len(battery_list)>0):
-                logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
-                for battery in battery_list:
-                    c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
-                    c.action_controller(battery['id'])
-            else:
-                logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
+            try:
+                battery_list=[]
+                battery_list = get_battery_list()  # Get fresh battery list every minute
+                if (len(battery_list)>0):
+                    logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
+                    for battery in battery_list:
+                        c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
+                        c.action_controller(battery['id'])
+                else:
+                    logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
+            except Exception as e:
+                logging.error(f"Error in action Thread:{e}")
 
 
 
@@ -42,15 +45,18 @@ def history():
         current_time=time.time()
         if (current_time-last_time>=60):
             last_time=current_time
-            battery_list=[]
-            battery_list = get_battery_list()  # Get fresh battery list every minute
-            if (len(battery_list)>0):
-                logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
-                for battery in battery_list:
-                    c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
-                    c.history_controller(battery_id=battery['id'])
-            else:
-                logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
+            try:
+                battery_list=[]
+                battery_list = get_battery_list()  # Get fresh battery list every minute
+                if (len(battery_list)>0):
+                    logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
+                    for battery in battery_list:
+                        c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
+                        c.history_controller(battery_id=battery['id'])
+                else:
+                    logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
+            except Exception as e:
+                    logging.error(f"Error in history Thread:{e}")
 
             
 
