@@ -4,6 +4,8 @@ import time
 import threading
 import os
 import logging
+import json
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 load_dotenv()
@@ -24,15 +26,20 @@ def action():
         if (current_time-last_time>=60):
             last_time=current_time
             try:
-                battery_list=[]
                 battery_list = get_battery_list()  # Get fresh battery list every minute
-                if (len(battery_list)>0):
+                if (battery_list):  # If battery list is successfully received, save it as a file
                     logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
-                    for battery in battery_list:
+                    with open("latest_battery_list.json", "w") as f:
+                        json.dump(battery_list.json(), f, indent=4)
+                        
+                else:   #If battery list is empty, read from last saved one
+                    with open("latest_battery_list.json", "r") as f:
+                        battery_list = json.load(f)
+                    logging.info(f"get_battery_list:Battery list is empty, openning the latest battery list{battery_list}:")
+
+                for battery in battery_list:
                         c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
                         c.action_controller(battery['id'])
-                else:
-                    logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
             except Exception as e:
                 logging.error(f"Error in action Thread:{e}")
 
@@ -46,15 +53,19 @@ def history():
         if (current_time-last_time>=60):
             last_time=current_time
             try:
-                battery_list=[]
                 battery_list = get_battery_list()  # Get fresh battery list every minute
-                if (len(battery_list)>0):
+                if (battery_list):  # If battery list is successfully received, save it as a file
                     logging.info(f"get_battery_list:Succesfully received battery list:{battery_list}")
-                    for battery in battery_list:
+                    with open("latest_battery_list.json", "w") as f:
+                        json.dump(battery_list.json(), f, indent=4)
+                        
+                else:   #If battery list is empty, read from last saved one
+                    with open("latest_battery_list.json", "r") as f:
+                        battery_list = json.load(f)
+                    logging.info(f"get_battery_list:Battery list is empty, openning the latest battery list{battery_list}:")
+                for battery in battery_list:
                         c.change_battery_id(battery['id'])  # Set the correct battery_id for this battery
                         c.history_controller(battery_id=battery['id'])
-                else:
-                    logging.info(f"get_battery_list:Battery list is empty:{battery_list}")
             except Exception as e:
                     logging.error(f"Error in history Thread:{e}")
 
