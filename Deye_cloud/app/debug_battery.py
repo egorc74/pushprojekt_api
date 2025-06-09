@@ -18,7 +18,7 @@ def main():
     controller = MainController(api_url=api_url, username=username, password=password)
     
     # Get battery list
-    batteries = controller.get_battery_list()
+    batteries = controller.get_battery_list()   
     if not batteries:
         logging.error("Failed to get battery list")
         return

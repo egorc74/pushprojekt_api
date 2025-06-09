@@ -103,7 +103,6 @@ class MainController:
             response.raise_for_status()  # Raise an error for bad status codes
             data = response.json()  # Decodes JSON automatically
             battery_list = data  # Return full battery data instead of just IDs
-
             return battery_list
 
         except requests.exceptions.HTTPError as err:
@@ -118,12 +117,15 @@ class MainController:
 
     ##READING BATTERY ACTIONS AND CONTROLL THEM
     def get_battery_action(self,battery_id): #returns [battery_id,action,power]
-        url= f"{self.api_url}/battery-actions?battery_id={battery_id}&action_executed=false"
-
-        token=self.get_token()
-        headers = {'Authorization': f'Bearer {token}'}
         try:
-            response = requests.get(url, headers=headers)
+            url= f"{self.api_url}/battery-actions/"
+            params = {
+                "battery_id": battery_id,
+                "action_executed": False
+            }
+            token=self.get_token()
+            headers = {'Authorization': f'Bearer {token}'}
+            response = requests.get(url, headers=headers,params=params)
             response.raise_for_status()  # Raise an error for bad status codes
             data = response.json()
             if data:
@@ -268,9 +270,17 @@ class MainController:
     
     ##RETRIEVING CURRENT PRODUCTION RECORDS AND SAVING THEM IN SYSTEM
     def get_power_records(self,battery_id):     #TODo update parameters
-        serial_number="2407264006"
-        self.commission.update_serial(sn=serial_number)
+        
+       
         try:
+            battery_list = self.get_battery_list()
+            if not battery_list:
+                raise Exception("Failed to get battery list")            
+            battery = next((b for b in battery_list if b['id'] == battery_id), None)
+            if not battery:
+                raise Exception(f"Battery with ID {battery_id} not found")
+            serial_number = battery['serial_number']
+            self.commission.update_serial(sn=serial_number)
             response=self.commission.get_lattest_history()
             logging.info(f"get_power_records:Records were succesfully received{response}")
             return response
@@ -380,4 +390,4 @@ def parse_device_payload(raw_data):
 
 if __name__=="__main__":
     c=MainController(api_url=api_url,username=username,password=password)
-    print(c.get_power_records(1))
+    print(c.get_battery_action(2))

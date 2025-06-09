@@ -372,7 +372,7 @@ Value for field of 'measurePoints' could be got through endpint '/v1.0/device/me
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "00:00"  # your control time
+                    "time": "23:00"  # your control time
                 }
             ]
         }
@@ -401,42 +401,42 @@ Value for field of 'measurePoints' could be got through endpint '/v1.0/device/me
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power":power,
-                    "time": "00:10"  # your control time
+                    "time": "00:00"  # your control time
                 },
                 {
                     "enableGeneration": True,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "02:10"  # your control time
+                    "time": "04:00"  # your control time
                 },
                 {
                     "enableGeneration": True,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "04:10"  # your control time
+                    "time": "08:00"  # your control time
                 },
                 {
                     "enableGeneration": True,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "15:10"  # your control time
+                    "time": "16:00"  # your control time
                 },
                 {
                     "enableGeneration": True,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "20:10"  # your control time
+                    "time": "20:00"  # your control time
                 },
                 {
                     "enableGeneration": True,
                     "enableGridCharge": True,
                     "soc": targetSOC,  # high value
                     "power": power,
-                    "time": "23:10"  # your control time
+                    "time": "23:00"  # your control time
                 }
             ]
         }
