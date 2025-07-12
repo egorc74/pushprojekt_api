@@ -151,6 +151,28 @@ class MainController:
             logging.error(f"get_battery_actions:An error occurred: {err}")
         return None
 
+    ##GET LAST BATTERY RECORD (for current voltage)
+    def get_last_battery_record(self,battery_id):
+        url=f"{self.api_url}/battery-records/battery/{battery_id}/last"
+        token=self.get_token()
+        headers = {'Authorization': f'Bearer {token}'}
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            logging.info(f"get_last_battery_record:Records were succesfully received{data}")
+            return data
+        except requests.exceptions.HTTPError as err:
+            logging.error(f"get_last_battery_record:HTTP error occurred: {err}")
+            logging.error(f"get_last_battery_record:Response content: {response.text}")
+        except ValueError as err:
+            logging.error(f"get_last_battery_record:Value error: {err}")
+        except Exception as err:
+            logging.error(f"get_last_battery_record:An error occurred: {err}")
+        return None
+
+
+
     def controll_battery(self,action,power,battery_id):
         try:
             # Get battery list to find max power values
@@ -198,7 +220,12 @@ class MainController:
                     logging.error(f"controll_battery:response from sending actions{response}")
                     raise Exception(f"controll_battery:Unsuccessful command{success}")
             if(action==1):
-                response=self.commission.battery_charge(power=power)
+                voltage=None
+                last_record=self.get_last_battery_record(battery_id=battery_id)
+                if last_record:
+                    voltage=last_record.get('voltage')
+                    logging.info(f"controll_battery:Voltage is {voltage}V")
+                response=self.commission.battery_charge(power=power,voltage=voltage)
                 success=response.get('success')
 
                 if(success==True):
@@ -389,5 +416,19 @@ def parse_device_payload(raw_data):
     return payload
 
 if __name__=="__main__":
+    import logging
+    import os
+
+    # Get the current directory of the script
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    log_file = os.path.join(current_dir, 'app.log')
+
+    # Configure logging
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.DEBUG,  # or INFO, WARNING, etc.
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
     c=MainController(api_url=api_url,username=username,password=password)
-    print(c.get_battery_action(2))
+    c.change_battery_id(battery_id="2")
+    c.controll_battery(action=0,battery_id=2,power=5000)

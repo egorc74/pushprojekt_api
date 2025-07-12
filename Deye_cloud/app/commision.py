@@ -316,17 +316,26 @@ Value for field of 'measurePoints' could be got through endpint '/v1.0/device/me
         print(response.json())
 
     ## MAIN CHARGING ACTIONS
-    def battery_charge(self,power,SOC=100):
+    def battery_charge(self,power,SOC=100,voltage=None):
+        if voltage:
+            grid_charge_ampere=power/voltage
+            grid_charge_ampere=round(grid_charge_ampere)
+        else:
+            grid_charge_ampere=15
+        #if grid charge ampere is more than 15A, set it to 15A
+        if grid_charge_ampere>15:
+            grid_charge_ampere=15
+
+
         url = self.variable.baseurl + '/strategy/dynamicControl'
         headers = self.variable.headers
-
-        targetSOC = SOC;
+        targetSOC = SOC
         power = power;  #this is just an example,fill in your target power (Reference valu : power = min(maxAcharge current, gridChargeAmpere) * vol)
         # request body
         data = {
             "deviceSn": self.serial_number,
             "gridChargeAction": "on",
-            #"gridChargeAmpere": 0,  # BMSCharge current limit;
+            "gridChargeAmpere": grid_charge_ampere,  # BMSCharge current limit;
             "touAction": "on",
             "touDays": ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"],
             # 7days: SUNDAY to SATURDAY
