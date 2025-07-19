@@ -389,7 +389,7 @@ Value for field of 'measurePoints' could be got through endpint '/v1.0/device/me
         response = requests.post(url, headers=headers, json=data)
         return response.json()
 
-    def battery_discharge(self,power,SOC=35):
+    def battery_discharge(self,power,SOC=10):
         url = self.variable.baseurl + '/strategy/dynamicControl'
         headers = self.variable.headers
 
